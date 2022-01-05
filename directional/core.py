@@ -1,16 +1,11 @@
 import copy
 import numpy as np
-from numpy import ndarray
-from typing import NewType, Tuple, Callable, Dict, Union
+from typing import Tuple, Callable
 from scipy.stats import chi2
 from pynverse import inversefunc
 from basic.decorators import type_checker, document
-from basic.types import TP_VONMISESFISHER, available_types
-from basic.docfunc import en_VonMisesFisher, en_VonMisesFisher_predict
-
-
-vector = NewType('vector', ndarray)
-matrix = NewType('matrix', ndarray)
+from basic.types import vector, matrix, Configuration, TP_VONMISESFISHER, available_types
+import basic.docfunc as doc
 
 
 def unitize(x: vector) -> vector:
@@ -62,16 +57,13 @@ def chi2_threshold(x: matrix, level: float = 0.05) -> float:
     return inversefunc(chi2_dis.cdf, y_values=1-level, domain=[0, upper])
 
 
-Configuration = Dict[str, Union[ndarray, float]]
-
-
-@document(en_VonMisesFisher)
+@document(doc.en_VonMisesFisher)
 class VonMisesFisher:
 
     settings: Configuration = {
-        'model_import': np.array([]),
-        'level': 0.05,
-        'data_import': np.array([]),
+        'model_import': np.array([]),  # ndarray, matrix-like
+        'level': 0.05,  # float, 0~1
+        'data_import': np.array([]),  # ndarray, matrix-like
     }
 
     @type_checker(in_class=True, kwargs_types=TP_VONMISESFISHER, elemental_types=available_types)
@@ -80,24 +72,16 @@ class VonMisesFisher:
             self.settings.update({k: v})
         self.mean = miu(self.settings.get('model_import'))
         self.a = a(self.settings.get('model_import'), self.mean)
-        self.a_threshold = chi2_threshold(self.settings.get('model_import'), self.settings.get('level'))
+        self.threshold = chi2_threshold(self.settings.get('model_import'), self.settings.get('level'))
 
     @type_checker(in_class=True, kwargs_types=TP_VONMISESFISHER, elemental_types=available_types)
-    @document(en_VonMisesFisher_predict)
+    @document(doc.en_VonMisesFisher_predict)
     def predict(self, **settings: Configuration):
         _settings = copy.deepcopy(self.settings)
         for k, v in settings.items():
             _settings.update({k: v})
-        return a(_settings.get('data_import'), self.mean) <= self.a_threshold
+        return a(_settings.get('data_import'), self.mean) <= self.threshold
 
 
 if __name__ == '__main__':
-    items, dims = 20, 5
-    np.random.seed(1)
-    dt = np.random.random(items * dims).reshape(dims, -1)
-    sqrt, bias = np.random.randint(1, 4, dims), np.random.randint(1, 5, dims)  # bias = [2, 2, 3, 2, 2]
-    dt = np.array([dt[i] * np.sqrt(sqrt[i]) + bias[i] for i in range(len(dt))]).T
-
-    model = VonMisesFisher(model_import=dt)
-    print('result for model-regular direction:', model.predict(data_import=np.array([bias]))[0])
-    print('result for anomalous instance:', model.predict(data_import=np.array([[5, 2, 3, 2, 7]]))[0])
+    pass
