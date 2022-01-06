@@ -4,7 +4,7 @@ from typing import Tuple, Callable
 from scipy.stats import chi2
 from pynverse import inversefunc
 from basic.decorators import type_checker, document
-from basic.types import vector, matrix, Configuration, TP_VONMISESFISHER, available_types
+from basic.types import vector, matrix, Configuration, TP_VONMISESFISHER, elemental
 import basic.docfunc as doc
 
 
@@ -66,15 +66,16 @@ class VonMisesFisher:
         'data_import': np.array([]),  # ndarray, matrix-like
     }
 
-    @type_checker(in_class=True, kwargs_types=TP_VONMISESFISHER, elemental_types=available_types)
+    @type_checker(in_class=True, kwargs_types=TP_VONMISESFISHER, elemental_types=elemental)
     def __init__(self, **settings: Configuration):
         for k, v in settings.items():
             self.settings.update({k: v})
-        self.mean = miu(self.settings.get('model_import'))
-        self.a = a(self.settings.get('model_import'), self.mean)
-        self.threshold = chi2_threshold(self.settings.get('model_import'), self.settings.get('level'))
+        self.model = self.settings.get('model_import')
+        self.mean = miu(self.model)
+        self.a = a(self.model, self.mean)
+        self.threshold = chi2_threshold(self.model, self.settings.get('level'))
 
-    @type_checker(in_class=True, kwargs_types=TP_VONMISESFISHER, elemental_types=available_types)
+    @type_checker(in_class=True, kwargs_types=TP_VONMISESFISHER, elemental_types=elemental)
     @document(doc.en_VonMisesFisher_predict)
     def predict(self, **settings: Configuration):
         _settings = copy.deepcopy(self.settings)

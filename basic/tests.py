@@ -1,6 +1,6 @@
 import numpy as np
-from directional.core import VonMisesFisher
-from hotelling.core import Hotelling
+from core.directional import VonMisesFisher
+from core.hotelling import Hotelling
 
 
 items, dims = 20, 5
@@ -12,7 +12,7 @@ dt = np.array([dt[i] * np.sqrt(sqrt[i]) + bias[i] for i in range(len(dt))]).T
 
 print('-'*50, 'test for hotelling package', '-'*50)
 model = Hotelling(model_import=dt)
-print('result for model-regular direction:', model.predict(data_import=model.settings.get('model_import'))[0])
+print('result for model-regular instance:', model.predict(data_import=model.model)[0])
 print('result for anomalous instance:', model.predict(data_import=np.array([[5, 2, 3, 2, 7]]))[0])
 
 print('-'*50, 'test for directional package', '-'*50)

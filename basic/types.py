@@ -7,7 +7,7 @@ Configuration = Dict[str, Union[ndarray, float]]
 
 basic_types = [type(None), str, bool, int, float, tuple, list, dict]
 user_defined_types = [ndarray, Callable[[Any], Any].__origin__]
-available_types = basic_types + user_defined_types
+elemental = basic_types + user_defined_types
 
 
 TP_VONMISESFISHER = {

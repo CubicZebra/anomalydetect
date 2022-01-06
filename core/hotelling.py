@@ -3,7 +3,7 @@ from numpy import ndarray
 from typing import Callable, Tuple
 from pynverse import inversefunc
 from scipy.stats import chi2
-from basic.types import vector, matrix, Configuration, available_types, TP_HOTELLING
+from basic.types import vector, matrix, Configuration, elemental, TP_HOTELLING
 from basic.decorators import document, type_checker
 import basic.docfunc as doc
 
@@ -48,14 +48,15 @@ class Hotelling:
         'data_import': np.array([]),  # ndarray, matrix-like
     }
 
-    @type_checker(in_class=True, kwargs_types=TP_HOTELLING, elemental_types=available_types)
+    @type_checker(in_class=True, kwargs_types=TP_HOTELLING, elemental_types=elemental)
     def __init__(self, **settings: Configuration):
         for k, v in settings.items():
             self.settings.update({k: v})
-        self.mean, self.sigma = _mvn_params(self.settings.get('model_import'))
-        self.threshold = hotelling_threshold(self.settings.get('model_import').shape[1], self.settings.get('level'))
+        self.model = self.settings.get('model_import')
+        self.mean, self.sigma = _mvn_params(self.model)
+        self.threshold = hotelling_threshold(self.model.shape[1], self.settings.get('level'))
 
-    @type_checker(in_class=True, kwargs_types=TP_HOTELLING, elemental_types=available_types)
+    @type_checker(in_class=True, kwargs_types=TP_HOTELLING, elemental_types=elemental)
     @document(doc.en_Hotelling_predict)
     def predict(self, **settings: Configuration):
         for k, v in settings.items():
