@@ -6,6 +6,7 @@ from scipy.stats import chi2
 from basic.types import vector, matrix, Configuration, elemental, TP_HOTELLING
 from basic.decorators import document, type_checker
 import basic.docfunc as doc
+import copy
 
 
 def _mvn_params(x: matrix) -> Tuple[vector, matrix]:
@@ -50,8 +51,8 @@ class Hotelling:
 
     @type_checker(in_class=True, kwargs_types=TP_HOTELLING, elemental_types=elemental)
     def __init__(self, **settings: Configuration):
-        for k, v in settings.items():
-            self.settings.update({k: v})
+        assert np.all([k in settings.keys() for k in ['model_import']]) == 1, 'missing required arg model_import.'
+        self.settings.update({k: v for k, v in settings.items()})
         self.model = self.settings.get('model_import')
         self.mean, self.sigma = _mvn_params(self.model)
         self.threshold = hotelling_threshold(self.model.shape[1], self.settings.get('level'))
@@ -59,9 +60,10 @@ class Hotelling:
     @type_checker(in_class=True, kwargs_types=TP_HOTELLING, elemental_types=elemental)
     @document(doc.en_Hotelling_predict)
     def predict(self, **settings: Configuration):
-        for k, v in settings.items():
-            self.settings.update({k: v})
-        return a(self.settings.get('data_import'), self.mean, self.sigma) <= self.threshold
+        assert np.all([k in settings.keys() for k in ['data_import']]) == 1, 'missing required arg data_import.'
+        _settings = copy.deepcopy(self.settings)
+        _settings.update({k: v for k, v in settings.items()})
+        return a(_settings.get('data_import'), self.mean, self.sigma) <= self.threshold
 
 
 if __name__ == '__main__':

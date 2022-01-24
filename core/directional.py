@@ -68,8 +68,8 @@ class VonMisesFisher:
 
     @type_checker(in_class=True, kwargs_types=TP_VONMISESFISHER, elemental_types=elemental)
     def __init__(self, **settings: Configuration):
-        for k, v in settings.items():
-            self.settings.update({k: v})
+        assert np.all([k in settings.keys() for k in ['model_import']]) == 1, 'missing required arg model_import.'
+        self.settings.update({k: v for k, v in settings.items()})
         self.model = self.settings.get('model_import')
         self.mean = miu(self.model)
         self.a = a(self.model, self.mean)
@@ -78,9 +78,9 @@ class VonMisesFisher:
     @type_checker(in_class=True, kwargs_types=TP_VONMISESFISHER, elemental_types=elemental)
     @document(doc.en_VonMisesFisher_predict)
     def predict(self, **settings: Configuration):
+        assert np.all([k in settings.keys() for k in ['data_import']]) == 1, 'missing required arg data_import.'
         _settings = copy.deepcopy(self.settings)
-        for k, v in settings.items():
-            _settings.update({k: v})
+        _settings.update({k: v for k, v in settings.items()})
         return a(_settings.get('data_import'), self.mean) <= self.threshold
 
 

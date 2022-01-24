@@ -1,4 +1,5 @@
 from numpy import ndarray
+from basic.types import Sequence, Bow
 
 
 def lighten_args(*args):
@@ -42,6 +43,45 @@ def en_Hotelling_predict(data_import: ndarray) -> ndarray:
     :return:
     """
     lighten_args(data_import)
+
+
+def en_NaiveBayes(gamma: float, validation_rate: float):
+    """
+
+    :param gamma:
+    :param validation_rate:
+    :return:
+    """
+    lighten_args(gamma, validation_rate)
+
+
+def en_NaiveBayes_fit(x: Sequence[Bow], y: ndarray):
+    """
+
+    :param x:
+    :param y:
+    :return:
+    """
+    lighten_args(x, y)
+
+
+def en_NaiveBayes_predict(data_import: Sequence[Bow]) -> ndarray:
+    """
+
+    :param data_import:
+    :return:
+    """
+    lighten_args(data_import)
+
+
+def en_NaiveBayes_update(x: Sequence[Bow], y: ndarray):
+    """
+
+    :param x:
+    :param y:
+    :return:
+    """
+    lighten_args(x, y)
 
 
 if __name__ == '__main__':

@@ -45,9 +45,11 @@ def _structuralize_params(args: tuple, kwargs: dict, annotations: dict, in_class
     if len(kwargs) > 0:
         del _annotations[list(_annotations.keys())[-1]]
         args_num = args_num - 1
+        params = [_args.pop(0) if len(_args) != (args_num + 1) else tuple(_args) for _ in range(args_num)]
+    else:  # logic for empty signature
+        params = []
 
     keys_ref = list(_annotations.keys())
-    params = [_args.pop(0) if len(_args) != (args_num + 1) else tuple(_args) for _ in range(args_num)]
     return keys_ref, params
 
 
