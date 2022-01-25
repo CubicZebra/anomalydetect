@@ -30,7 +30,7 @@ clf.fit(x=X, y=y)
 print('result of threshold after fitting:', clf.threshold)
 clf.update(x=X[200:400], y=y[200: 400])
 print('result of threshold after updating:', clf.threshold)
-print('implementation of prediction after updating:', clf.predict(data_import=X[50:55]))
+print('implementation of prediction after updating:', clf.predict(x=X[50:55]))
 
 
 if __name__ == '__main__':

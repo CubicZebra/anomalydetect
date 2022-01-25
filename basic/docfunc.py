@@ -65,13 +65,13 @@ def en_NaiveBayes_fit(x: Sequence[Bow], y: ndarray):
     lighten_args(x, y)
 
 
-def en_NaiveBayes_predict(data_import: Sequence[Bow]) -> ndarray:
+def en_NaiveBayes_predict(x: Sequence[Bow]) -> ndarray:
     """
 
-    :param data_import:
+    :param x:
     :return:
     """
-    lighten_args(data_import)
+    lighten_args(x)
 
 
 def en_NaiveBayes_update(x: Sequence[Bow], y: ndarray):

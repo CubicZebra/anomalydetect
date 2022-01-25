@@ -88,15 +88,38 @@ def _vectorize(x: Sequence[Bow], dim: int):
     return res
 
 
-def idx_splitter(x: Sequence, rate: float) -> Tuple[ndarray]:
-    uni, counts = np.unique(x, return_counts=True)
-    valid_counts = np.array(counts*rate, dtype=int)
+def split(x: Sequence, n: int):
+    k, m = divmod(len(x), n)
+    return (x[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
+
+
+def k_folder(obj: ndarray, rate: float) -> Tuple[ndarray]:
+    _idx = np.array([_ for _ in range(len(obj))])
+    splitted_idx = np.array_split(_idx, int(1/rate))
+
+    def complementary_idx(s: ndarray, x: ndarray) -> ndarray:
+        return np.array(list(set(s).difference(set(x))))
+
+    for _ in range(len(splitted_idx)):
+        yield obj[complementary_idx(_idx, splitted_idx[_])], obj[splitted_idx[_]]  # train, test
+
+
+def cv_splitter(x: Sequence, rate: float) -> Tuple[ndarray]:
+    uni = np.unique(x)
     _mediate = np.array([np.where(x == item)[0] for item in uni], dtype=object)
-    valid_idx = np.array([np.random.choice(_mediate[_], size=valid_counts[_], replace=False)
-                          for _ in range(len(uni))], dtype=object)
-    train_idx = np.array([np.array(list(set(_mediate[_]).difference(set(valid_idx[_])))) for _ in range(len(uni))],
-                         dtype=object)
-    return train_idx, valid_idx
+    gen = [k_folder(_mediate[_], rate) for _ in range(len(_mediate))]
+    s = [[(train, test) for train, test in gen[_]] for _ in range(len(gen))]
+    for j in range(len(s[0])):
+        tr, ts = [], []
+        for i in range(len(s)):
+            tr.append(s[i][j][0])
+            ts.append(s[i][j][1])
+        yield np.array(tr, dtype=object), np.array(ts, dtype=object)
+
+
+def _two_classes_idx(x: ndarray) -> ndarray:
+    uni = np.unique(x)
+    return np.array([np.where(x == item)[0] for item in uni], dtype=object)
 
 
 def _a_updater(x: Sequence[Bow], idx: ndarray, dim: int, prior: Union[float, ndarray]) -> ndarray:
@@ -137,7 +160,7 @@ class NaiveBayes:
 
     settings: Configuration = {
         'gamma': 1.0,  # float, 0~1
-        'validation_rate': .3,  # float, 0~1
+        'validation_rate': .2,  # float, 0~1
         'data_import': np.array([]),  # ndarray, matrix-like
     }
 
@@ -162,18 +185,19 @@ class NaiveBayes:
         self.X, self.y = self.settings.get('x'), self.settings.get('y')
         assert np.unique(self.y).__len__() == 2, 'label y should be of 2 classes.'
         self.dim, self.unique = _find_dim(self.X), np.unique(self.y)
-        train_idx, test_idx = idx_splitter(self.y, self.settings.get('validation_rate'))
-        self.prior, self.a = _a_updater(self.X, train_idx, self.dim, self.settings.get('gamma'))
-        a_scores = np.array([a(self.X[test_idx[_]], self.a) for _ in range(len(test_idx))], dtype=object)  # threshold
-        self.threshold = harmonic_mean(a_scores)
+        self.prior, self.a = _a_updater(self.X, _two_classes_idx(self.y), self.dim, self.settings.get('gamma'))
+        gen = cv_splitter(self.y, self.settings.get('validation_rate'))
+        idx = [[tr, ts] for tr, ts in gen]
+        self.threshold = np.array([harmonic_mean(np.array([a(self.X[item[1][_]], self.a) for _ in range(len(item[1]))],
+                                                          dtype=object)) for item in idx]).mean()
 
     @type_checker(in_class=True, kwargs_types=TP_BAYES, elemental_types=elemental)
     @document(doc.en_NaiveBayes_predict)
     def predict(self, **settings: Configuration) -> ndarray:
-        assert np.all([k in settings.keys() for k in ['data_import']]) == 1, 'missing required arg data_import.'
+        assert np.all([k in settings.keys() for k in ['x']]) == 1, 'missing required arg x.'
         _settings = copy.deepcopy(self.settings)
         _settings.update({k: v for k, v in settings.items()})
-        X = _settings.get('data_import')
+        X = _settings.get('x')
         assert self.a is not None, 'predict method should be called after fitting.'
         a_scores = a(X, self.a)
         return np.array([self.unique[0] if a_scores[_] > 0 else self.unique[1] for _ in range(len(a_scores))])
@@ -184,13 +208,12 @@ class NaiveBayes:
         assert np.all([k in settings.keys() for k in ['x', 'y']]) == 1, 'missing required args x and y.'
         self.settings.update({k: v for k, v in settings.items()})
         X, y = self.settings.get('x'), self.settings.get('y')
-        update_idx, _ = idx_splitter(y, 0)
-        self.prior, self.a = _a_updater(X, update_idx, self.dim, self.prior)  # for posterior a vector
-        self.X = np.concatenate([self.X, X], axis=0)
-        self.y = np.concatenate([self.y, y], axis=0)
-        _, update_idx = idx_splitter(self.y, self.settings.get('validation_rate'))  # update threshold
-        a_scores = np.array([a(self.X[update_idx[_]], self.a) for _ in range(len(update_idx))], dtype=object)
-        self.threshold = harmonic_mean(a_scores)
+        self.prior, self.a = _a_updater(X, _two_classes_idx(y), self.dim, self.prior)  # for posterior a vector
+        self.X, self.y = np.concatenate([self.X, X], axis=0), np.concatenate([self.y, y], axis=0)
+        gen = cv_splitter(self.y, self.settings.get('validation_rate'))
+        idx = [[tr, ts] for tr, ts in gen]
+        self.threshold = np.array([harmonic_mean(np.array([a(self.X[item[1][_]], self.a) for _ in range(len(item[1]))],
+                                                          dtype=object)) for item in idx]).mean()
 
 
 if __name__ == '__main__':

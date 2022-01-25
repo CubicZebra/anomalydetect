@@ -30,14 +30,14 @@ def load_data_from_index(index: str, root_folder: str):
     for _ in range(len(_files)):
         tag_script = _files[_].strip().replace('../', root_folder).split(' ')
         try:
-            script = open_file(tag_script[1], encoding='gbk')
+            words = open_file(tag_script[1], encoding='gbk')
         except UnicodeDecodeError:
             continue
             try:
-                script = open_file(tag_script[1], encoding='utf-8')  # for English script
+                words = open_file(tag_script[1], encoding='utf-8')  # for English script
             except UnicodeDecodeError:
                 continue
-        yield script, tag_script[0]
+        yield words, tag_script[0]
 
 
 build_splitted_scripts_and_dictionary = False
