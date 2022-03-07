@@ -7,7 +7,7 @@ from numpy import ndarray
 import copy
 
 
-def _rect_inter_inner(x1, x2):
+def _rect_inter_inner(x1: ndarray, x2: ndarray) -> Tuple[ndarray]:
     n1 = x1.shape[0]-1
     n2 = x2.shape[0]-1
     X1 = np.c_[x1[:-1], x1[1:]]
@@ -19,7 +19,7 @@ def _rect_inter_inner(x1, x2):
     return S1, S2, S3, S4
 
 
-def _rectangle_intersection_(x1, y1, x2, y2):
+def _rectangle_intersection_(x1: ndarray, y1: ndarray, x2: ndarray, y2: ndarray) -> Tuple[ndarray]:
     S1, S2, S3, S4 = _rect_inter_inner(x1, x2)
     S5, S6, S7, S8 = _rect_inter_inner(y1, y2)
 
@@ -32,7 +32,7 @@ def _rectangle_intersection_(x1, y1, x2, y2):
     return ii, jj
 
 
-def intersection(x1, y1, x2, y2):
+def intersection(x1: ndarray, y1: ndarray, x2: ndarray, y2: ndarray) -> Tuple[float]:
     """function to obtain interaction point between two curves"""
     x1 = np.asarray(x1)
     x2 = np.asarray(x2)
@@ -72,7 +72,7 @@ def intersection(x1, y1, x2, y2):
     return xy0[:, 0], xy0[:, 1]
 
 
-def _find_dim(x: Sequence[Bow]):
+def _find_dim(x: Sequence[Bow]) -> int:
     res = 0
     for item in x:
         for sub_item in item:
@@ -80,17 +80,12 @@ def _find_dim(x: Sequence[Bow]):
     return res+1
 
 
-def _vectorize(x: Sequence[Bow], dim: int):
+def _vectorize(x: Sequence[Bow], dim: int) -> ndarray:
     res = np.repeat(0, dim)
     for item in x:
         for sub_item in item:
             res[sub_item[0]] += sub_item[1]
     return res
-
-
-def split(x: Sequence, n: int):
-    k, m = divmod(len(x), n)
-    return (x[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(n))
 
 
 def k_folder(obj: ndarray, rate: float) -> Tuple[ndarray]:
@@ -129,7 +124,7 @@ def _a_updater(x: Sequence[Bow], idx: ndarray, dim: int, prior: Union[float, nda
         posterior = np.array([(train[_] + prior) / (temp1[_] + temp2) for _ in range(len(train))])
     else:  # prior a vector exists
         temp1, temp2 = train.sum(axis=1), prior.sum(axis=1)
-        posterior = np.array([(train[_]+prior[_]) / (temp1[_] + temp2[_]) for _ in range(len(train))])
+        posterior = np.array([(train[_] + prior[_]) / (temp1[_] + temp2[_]) for _ in range(len(train))])
     _scores = np.log(posterior[0]) - np.log(posterior[1])
     return posterior, _scores/_scores.sum()
 
@@ -142,6 +137,7 @@ def _sparse_a(x: Bow, a_vec: ndarray) -> float:
 
 
 def a(x: Sequence[Bow], a_vec: ndarray) -> ndarray:
+    """anomaly score"""
     return np.array([_sparse_a(x[_], a_vec) for _ in range(len(x))])
 
 
@@ -152,7 +148,8 @@ def harmonic_mean(x: ndarray) -> float:
     y1 = [(cls1 > x1[_]).sum() / len1 for _ in range(len(x1))]
     x2 = np.linspace(cls2.min(), cls2.max(), 2000)
     y2 = [(cls2 <= x2[_]).sum() / len2 for _ in range(len(x2))]
-    return intersection(x1, y1, x2, y2)[0][0]
+    res, _ = intersection(x1, y1, x2, y2)
+    return np.asscalar(res)
 
 
 @document(doc.en_NaiveBayes)
@@ -161,7 +158,6 @@ class NaiveBayes:
     settings: Configuration = {
         'gamma': 1.0,  # float, 0~1
         'validation_rate': .2,  # float, 0~1
-        'data_import': np.array([]),  # ndarray, matrix-like
     }
 
     @type_checker(in_class=True, kwargs_types=TP_BAYES, elemental_types=elemental)
